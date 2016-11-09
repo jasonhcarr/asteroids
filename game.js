@@ -1,97 +1,69 @@
 (function gameSetup() {
-    'use strict';
+        'use strict';
+        var shipElem = document.getElementById('ship');
+        var allAsteroids = [];
+        var ship = {
+            velocity: null,
+            angle: 0,
+            element: shipElem
+        };
 
-    var shipElem = document.getElementById('ship');
+        ship.element.style.top = '350px';
+        ship.element.style.left = '500px';
+        shipElem.addEventListener('asteroidDetected', function(event) {
+            allAsteroids.push(event.detail);
+        });
 
-    // Create your "ship" object and any other variables you might need...
+        function handleKeys(event) {
+            switch (event.keyCode) {
+                case 37:
+                    ship.angle -= 25;
+                    console.log(ship.element.style.transform);
+                    ship.element.style.transform = "rotate(" + ship.angle + "deg)";
+                    break;
+                case 38:
+                    ship.velocity < 10 ? ship.velocity++ : ship.velocity = 10;
+                    break;
+                case 39:
+                    ship.angle += 25;
+                    ship.element.style.transform = "rotate(" + ship.angle + "deg)";
+                    console.log(ship.element.style.transform);
+                    break;
+                case 40:
+                    ship.velocity > 0 ? ship.velocity-- : ship.velocity = 0;
+                    break;
+            }
+        }
 
+    document.querySelector('body').addEventListener('keydown', handleKeys);
 
-    var allAsteroids = [];
-    shipElem.addEventListener('asteroidDetected', function (event) {
-        // You can detect when a new asteroid appears with this event.
-        // The new asteroid's HTML element will be in:  event.detail
-
-        // What might you need/want to do in here?
-
-    });
-
-    /**
-     * Use this function to handle when a key is pressed. Which key? Use the
-     * event.keyCode property to know:
-     *
-     * 37 = left
-     * 38 = up
-     * 39 = right
-     * 40 = down
-     *
-     * @param  {Event} event   The "keyup" event object with a bunch of data in it
-     * @return {void}          In other words, no need to return anything
-     */
-    function handleKeys(event) {
-        console.log(event.keyCode);
-
-        // Implement me!
-
-    }
-    document.querySelector('body').addEventListener('keyup', handleKeys);
-
-    /**
-     * This is the primary "game loop"... in traditional game development, things
-     * happen in a loop like this. This function will execute every 20 milliseconds
-     * in order to do various things. For example, this is when all game entities
-     * (ships, etc) should be moved, and also when things like hit detection happen.
-     *
-     * @return {void}
-     */
     function gameLoop() {
-        // This function for getting ship movement is given to you (at the bottom).
-        // NOTE: you will need to change these arguments to match your ship object!
-        // What does this function return? What will be in the `move` variable?
-        // Read the documentation!
-        var move = getShipMovement(shipsCurrentVelocity, shipsCurrentAngle);
-
-
-        // Move the ship here!
-
-
-        // Time to check for any collisions (see below)...
+        var move = getShipMovement(ship.velocity, ship.angle);
+        var top = parseInt(ship.element.style.top);
+        console.log(top);
+        ship.element.style.top = (top - move.top) + 'px';
+        var left = parseInt(ship.element.style.left);
+        ship.element.style.left = (left + move.left) + 'px';
         checkForCollisions();
     }
 
-    /**
-     * This function checks for any collisions between asteroids and the ship.
-     * If a collision is detected, the crash method should be called with the
-     * asteroid that was hit:
-     *    crash(someAsteroidElement);
-     *
-     * You can get the bounding box of an element using:
-     *    someElement.getBoundingClientRect();
-     *
-     * A bounding box is an object with top, left, width, and height properties
-     * that you can use to detect whether one box is on top of another.
-     *
-     * @return void
-     */
     function checkForCollisions() {
-
-        // Implement me!
-
+        var shipPostion = ship.element.getBoundingClientRect();
+        for (var i = 0; i < allAsteroids.length; i++) {
+            var asteroidPosition = allAsteroids[i].getBoundingClientRect();
+            var overlap = !(asteroidPosition.right <= shipPostion.left ||
+                asteroidPosition.left >= shipPostion.right ||
+                asteroidPosition.bottom <= shipPostion.top ||
+                asteroidPosition.top >= shipPostion.bottom);
+            if (overlap === true) {
+                crash(allAsteroids[i]);
+            }
+        }
     }
 
-
-    /**
-     * This event handler will execute when a crash occurs
-     *
-     * return {void}
-     */
-    document.querySelector('main').addEventListener('crash', function () {
-        console.log('A crash occurred!');
-
-        // What might you need/want to do in here?
-
+    document.querySelector('main').addEventListener('crash', function() {
+        ship.velocity = 0;
     });
-
-
 
     /** ************************************************************************
      *             These functions and code are given to you.
@@ -99,22 +71,24 @@
      *                   !!! DO NOT EDIT BELOW HERE !!!
      ** ************************************************************************/
 
-     var loopHandle = setInterval(gameLoop, 20);
+    var loopHandle = setInterval(gameLoop, 20);
 
-     /**
-      * Executes the code required when a crash has occurred. You should call
-      * this function when a collision has been detected with the asteroid that
-      * was hit as the only argument.
-      *
-      * @param  {HTMLElement} asteroidHit The HTML element of the hit asteroid
-      * @return {void}
-      */
+    /**
+     * Executes the code required when a crash has occurred. You should call
+     * this function when a collision has been detected with the asteroid that
+     * was hit as the only argument.
+     *
+     * @param  {HTMLElement} asteroidHit The HTML element of the hit asteroid
+     * @return {void}
+     */
     function crash(asteroidHit) {
         document.querySelector('body').removeEventListener('keyup', handleKeys);
         asteroidHit.classList.add('hit');
         document.querySelector('#ship').classList.add('crash');
 
-        var event = new CustomEvent('crash', { detail: asteroidHit });
+        var event = new CustomEvent('crash', {
+            detail: asteroidHit
+        });
         document.querySelector('main').dispatchEvent(event);
     }
 
